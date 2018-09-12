@@ -53,11 +53,11 @@ install:
   # Install the build environment with a script that uses the environment
   # variables: we use a Python 3.4 to run the script as it needs to uncompress
   # .tar.xv archives which is not supported in Python 2.
-  - "C:\\Python34-x64\\python appveyor\\pywinbuilder.py"
+  - "C:\\Python34-x64\\python utils\\appveyor\\pywinbuilder.py"
   - "set PATH=%MINGW_HOME%\\bin;%PATH%"
 
   # build MAD-X
-  - "call appveyor\\get_madx.bat %MADX_DIR%"
+  - "call utils\\appveyor\\get_madx.bat %MADX_DIR%"
 
   # build and install cpymad
   - "python setup.py build_ext -c mingw32 -lquadmath --madxdir=%MADX_DIR%"
