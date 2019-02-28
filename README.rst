@@ -33,6 +33,22 @@ Links
 .. _Latest release: https://pypi.org/project/cpymad#files
 .. _MAD-X source: https://github.com/MethodicalAcceleratorDesign/MAD-X
 
+Installation in SWAN (swan.cern.ch)
+To install it one can as usual do
+```
+pip install --user git+https://github.com/sterbini/cpymad.git 
+```
+or 
+```
+pip install --upgrade --user git+https://github.com/sterbini/cpymad.git 
+```
+To use it one, IF there is an old version installed, you should change the priority of your path, e.g.,
+```
+import sys
+sys.path.insert(1,'/eos/user/s/sterbini/.local/lib/python2.7/site-packages')
+from cpymad.madx import Madx
+madx = Madx()
+```
 
 License
 ~~~~~~~
