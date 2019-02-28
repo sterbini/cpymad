@@ -207,6 +207,15 @@ class Madx(object):
             pass
         raise AttributeError('Unknown attribute or command: {!r}'
                              .format(name))
+
+    start_section='!!************************************************START************************************************\n! '
+    end_section=  '!!*************************************************END*************************************************\n\n'
+    
+    def getPosition(self, mySequence, myElement):
+        myIndex=mySequence.element_names().index(myElement)
+        myPosition=mySequence.element_positions()[myIndex]
+        return myPosition    
+        
     def _tfsFormat(self, myValue, myFormat):
         if 'd' in myFormat:
             myValue=int(myValue)
@@ -271,6 +280,53 @@ class Madx(object):
             for i in listOfFile:
                 aux.append(self.tfs2pd(i))
             return pd.concat(aux,sort=False)
+     
+    def buildInput(self,myInputDictionary, myInputList, verbose=True):
+        aux=''
+        for i in myInputList:
+            #if i=='HEADER':
+            #    aux='option, echo, warn,info;\n'+aux
+            if verbose: 
+                aux=aux+self.start_section+i+'\n'
+            aux=aux+myInputDictionary[i]
+            if verbose: 
+                aux=aux+'\n' + self.end_section
+        return aux
+    
+    def buildFileFromDictionary(self,myInputDictionary,myFile="input.txt"):
+        text_file = open(myFile, "w")
+        text_file.write(self.buildInput(myInputDictionary,myInputDictionary.keys()))
+        text_file.close()
+   
+    def buildDictionaryFromFile(self,myFile="input.txt"):
+        myInputDictionaryFromFile=OrderedDict()
+        text_file = open(myFile, "r")
+        a=text_file.read()
+        text_file.close()
+
+        myInputDictionaryFromFile=OrderedDict()
+        myList=a.splitlines()
+        aux=[i for i, j in enumerate(myList) if j == self.start_section[0:-3]]
+
+        for i in range(len(aux)):
+            myAux=list(aux)
+            myAux.append(len(myList))
+            j=myAux[i]
+            k=myAux[i+1]
+
+            myString="""
+            {}""".format("\n".join(myList[(j+2):(k-2)]))
+            myString=myString[2:]
+            while '\n ' in myString:
+                myString=myString.replace('\n ', '\n')
+            while '  ' in myString:
+                myString=myString.replace('  ', ' ')
+            while ' \n' in myString:
+                myString=myString.replace(' \n', '\n')
+            if myString[0]==' ':
+                myString=myString[1:]
+            myInputDictionaryFromFile[myList[j+1][2:]]=myString
+        return myInputDictionaryFromFile   
 
     def quit(self):
         """Shutdown MAD-X interpreter and stop process."""
