@@ -13,6 +13,7 @@ from itertools import product
 from numbers import Number
 import os
 import subprocess
+import pandas as pd
 
 try:
     import collections.abc as abc
@@ -205,6 +206,70 @@ class Madx(object):
             pass
         raise AttributeError('Unknown attribute or command: {!r}'
                              .format(name))
+    def _tfsFormat(self, myValue, myFormat):
+        if 'd' in myFormat:
+            myValue=int(myValue)
+        if 'l' in myFormat:
+            myValue=float(myValue)
+        if 's' in myFormat:
+            myValue=myValue.replace('"','')
+        return myValue
+
+    def _tfs2pd(self, file_name):
+        myDictionaryComment=OrderedDict()
+        myDictionaryTableFieldName=[]
+        myDictionaryTableFieldFormat=[]
+        myDictionaryTable=OrderedDict()
+        f = open(file_name, "r")
+        for line in f: 
+            # This is a comment line
+            if line[0]=='@':
+                aux=line.split()
+                value=" ".join(str(x) for x in aux[3:])
+                myDictionaryComment[aux[1]]=self._tfsFormat(value, aux[2])
+
+            # This is the field name
+            if line[0]=='*':
+                aux=line.split()
+                for i in aux[1:]:
+                    myDictionaryTableFieldName.append(i)
+
+                for i in range(len(myDictionaryTableFieldName)):
+                    myDictionaryTable[myDictionaryTableFieldName[i]]=[]
+
+            if line[0]=='$':
+                aux=line.split()
+                for i in aux[1:]:
+                    myDictionaryTableFieldFormat.append(i)
+
+            if line[0]==' ':
+                aux=line.split()
+                for i in range(len(myDictionaryTableFieldName)):
+                    myDictionaryTable[myDictionaryTableFieldName[i]].append(self._tfsFormat(aux[i], myDictionaryTableFieldFormat[i]))
+
+        f.close()
+        aux=pd.DataFrame([myDictionaryComment])
+        aux['TABLE']=[pd.DataFrame(myDictionaryTable)]
+        aux['FILE_NAME']=file_name
+        aux=aux.set_index('FILE_NAME')
+        aux.index.name=''
+        return aux
+
+    def tfs2pd(self,listOfFile):
+        '''
+            Import a MADX TFS file in a pandas dataframe.
+
+            ===Example=== 
+            aux=madx.tfs2pd(['/eos/user/s/sterbini/MD_ANALYSIS/2018/LHC MD Optics/collisionAt25cm_180urad/lhcb1_thick.survey',
+            '/eos/user/s/sterbini/MD_ANALYSIS/2018/LHC MD Optics/collisionAt25cm_180urad/lhcb1_thick.twiss'])
+        '''
+        if isinstance(listOfFile,str):
+            return self._tfs2pd(listOfFile)
+        else:
+            aux=[]
+            for i in listOfFile:
+                aux.append(self.tfs2pd(i))
+            return pd.concat(aux,sort=False)
 
     def quit(self):
         """Shutdown MAD-X interpreter and stop process."""
